@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "666507118806",
+    "firebase_url": "https://multisdksamples-dda3a.firebaseio.com",
+    "project_id": "multisdksamples-dda3a",
+    "storage_bucket": "multisdksamples-dda3a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:666507118806:android:5aad563cfff848e7",
+        "android_client_info": {
+          "package_name": "com.sightsguru.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "666507118806-r7bpd8dqtitf5iv302j1eug2kse8tuiq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCX81-_V_Y2Y7NAcOoc1pQIkl7ngeT0fJ8"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

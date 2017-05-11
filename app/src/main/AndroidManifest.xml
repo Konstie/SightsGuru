@@ -16,22 +16,23 @@
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.tensorflow.demo">
+    package="com.sightsguru.app">
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
-    <application android:allowBackup="true"
-        android:debuggable="true"
+    <application
+        android:allowBackup="true"
+        android:name="com.sightsguru.app.InstantSightsApp"
         android:label="@string/app_name"
         android:icon="@drawable/ic_launcher"
         android:theme="@style/MaterialTheme">
 
-        <activity android:name="org.tensorflow.demo.ClassifierActivity"
+        <activity android:name="com.sightsguru.app.sections.recognizer.ClassifierActivity"
                   android:screenOrientation="portrait"
-                  android:label="@string/activity_name_classification">
+                  android:label="@string/activity_name_sightseeing_detector">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

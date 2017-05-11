@@ -30,6 +30,8 @@ import java.util.Vector;
 import org.tensorflow.Operation;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
+import io.reactivex.Flowable;
+
 /** A classifier specialized to label images using TensorFlow. */
 public class TensorFlowImageClassifier implements Classifier {
   static {
@@ -132,7 +134,7 @@ public class TensorFlowImageClassifier implements Classifier {
   }
 
   @Override
-  public List<Recognition> recognizeImage(final Bitmap bitmap) {
+  public List<Recognition> recognizeImage(Bitmap bitmap) {
     // Log this method so that it can be analyzed with systrace.
     Trace.beginSection("recognizeImage");
 
@@ -142,7 +144,7 @@ public class TensorFlowImageClassifier implements Classifier {
     bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
     for (int i = 0; i < intValues.length; ++i) {
       final int val = intValues[i];
-      floatValues[i * 3 + 0] = (((val >> 16) & 0xFF) - imageMean) / imageStd;
+      floatValues[i * 3] = (((val >> 16) & 0xFF) - imageMean) / imageStd;
       floatValues[i * 3 + 1] = (((val >> 8) & 0xFF) - imageMean) / imageStd;
       floatValues[i * 3 + 2] = ((val & 0xFF) - imageMean) / imageStd;
     }
@@ -151,7 +153,7 @@ public class TensorFlowImageClassifier implements Classifier {
     // Copy the input data into TensorFlow.
     Trace.beginSection("fillNodeFloat");
     inferenceInterface.fillNodeFloat(
-        inputName, new int[] {1, inputSize, inputSize, 3}, floatValues);
+            inputName, new int[] {1, inputSize, inputSize, 3}, floatValues);
     Trace.endSection();
 
     // Run the inference call.
@@ -166,23 +168,23 @@ public class TensorFlowImageClassifier implements Classifier {
 
     // Find the best classifications.
     PriorityQueue<Recognition> pq =
-        new PriorityQueue<Recognition>(
-            3,
-            new Comparator<Recognition>() {
-              @Override
-              public int compare(Recognition lhs, Recognition rhs) {
-                // Intentionally reversed to put high confidence at the head of the queue.
-                return Float.compare(rhs.getConfidence(), lhs.getConfidence());
-              }
-            });
+            new PriorityQueue<Recognition>(
+                    3,
+                    new Comparator<Recognition>() {
+                      @Override
+                      public int compare(Recognition lhs, Recognition rhs) {
+                        // Intentionally reversed to put high confidence at the head of the queue.
+                        return Float.compare(rhs.getConfidence(), lhs.getConfidence());
+                      }
+                    });
     for (int i = 0; i < outputs.length; ++i) {
       if (outputs[i] > THRESHOLD) {
         pq.add(
-            new Recognition(
-                "" + i, labels.size() > i ? labels.get(i) : "unknown", outputs[i], null));
+                new Recognition(
+                        "" + i, labels.size() > i ? labels.get(i) : "unknown", outputs[i], null));
       }
     }
-    final ArrayList<Recognition> recognitions = new ArrayList<Recognition>();
+    final List<Recognition> recognitions = new ArrayList<Recognition>();
     int recognitionsSize = Math.min(pq.size(), MAX_RESULTS);
     for (int i = 0; i < recognitionsSize; ++i) {
       recognitions.add(pq.poll());

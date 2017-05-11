@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true" />
 
-    <org.tensorflow.demo.RecognitionScoreView
+    <com.sightsguru.app.sections.recognizer.RecognitionScoreView
         android:id="@+id/results"
         android:layout_width="match_parent"
         android:layout_height="112dp"
