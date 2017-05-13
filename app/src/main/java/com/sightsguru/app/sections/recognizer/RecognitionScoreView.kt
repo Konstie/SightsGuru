@@ -15,8 +15,6 @@ limitations under the License.
 
 package com.sightsguru.app.sections.recognizer
 
-import io.reactivex.android.schedulers.AndroidSchedulers
-
 class RecognitionScoreView(context: android.content.Context, set: android.util.AttributeSet) : android.view.View(context, set), org.tensorflow.demo.ResultsView {
     private var results: List<org.tensorflow.demo.Classifier.Recognition>? = null
     private val textSizePx: Float
@@ -24,7 +22,6 @@ class RecognitionScoreView(context: android.content.Context, set: android.util.A
     private val bgPaint: android.graphics.Paint
 
     init {
-
         textSizePx = android.util.TypedValue.applyDimension(
                 android.util.TypedValue.COMPLEX_UNIT_DIP, com.sightsguru.app.sections.recognizer.RecognitionScoreView.Companion.TEXT_SIZE_DIP, resources.displayMetrics)
         fgPaint = android.graphics.Paint()

@@ -14,24 +14,29 @@
  * limitations under the License.
  */
 
-package com.sightsguru.app.sections.recognizer
+package com.sightsguru.app.sections.base
 
+import android.media.ImageReader
+import android.os.Handler
+import android.support.v7.app.AppCompatActivity
 import android.util.Size
+import com.sightsguru.app.R
+import com.sightsguru.app.sections.recognizer.CameraConnectionFragment
 
-abstract class CameraActivity : android.app.Activity(), android.media.ImageReader.OnImageAvailableListener {
+abstract class BaseCameraActivity : AppCompatActivity(), ImageReader.OnImageAvailableListener {
 
     var isDebug = false
         private set
 
-    private var handler: android.os.Handler? = null
+    private var handler: Handler? = null
     private var handlerThread: android.os.HandlerThread? = null
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
-        com.sightsguru.app.sections.recognizer.CameraActivity.Companion.LOGGER.d("onCreate " + this)
+        LOGGER.d("onCreate " + this)
         super.onCreate(null)
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        setContentView(com.sightsguru.app.R.layout.activity_camera)
+        setContentView(R.layout.activity_camera)
 
         if (hasPermission()) {
             setFragment()
@@ -41,24 +46,24 @@ abstract class CameraActivity : android.app.Activity(), android.media.ImageReade
     }
 
     @Synchronized public override fun onStart() {
-        com.sightsguru.app.sections.recognizer.CameraActivity.Companion.LOGGER.d("onStart " + this)
+        LOGGER.d("onStart " + this)
         super.onStart()
     }
 
     @Synchronized public override fun onResume() {
-        com.sightsguru.app.sections.recognizer.CameraActivity.Companion.LOGGER.d("onResume " + this)
+        LOGGER.d("onResume " + this)
         super.onResume()
 
         handlerThread = android.os.HandlerThread("inference")
         handlerThread!!.start()
-        handler = android.os.Handler(handlerThread!!.looper)
+        handler = Handler(handlerThread!!.looper)
     }
 
     @Synchronized public override fun onPause() {
-        com.sightsguru.app.sections.recognizer.CameraActivity.Companion.LOGGER.d("onPause " + this)
+        LOGGER.d("onPause " + this)
 
         if (!isFinishing) {
-            com.sightsguru.app.sections.recognizer.CameraActivity.Companion.LOGGER.d("Requesting finish")
+            LOGGER.d("Requesting finish")
             finish()
         }
 
@@ -68,19 +73,19 @@ abstract class CameraActivity : android.app.Activity(), android.media.ImageReade
             handlerThread = null
             handler = null
         } catch (e: InterruptedException) {
-            com.sightsguru.app.sections.recognizer.CameraActivity.Companion.LOGGER.e(e, "Exception!")
+            LOGGER.e(e, "Exception!")
         }
 
         super.onPause()
     }
 
     @Synchronized public override fun onStop() {
-        com.sightsguru.app.sections.recognizer.CameraActivity.Companion.LOGGER.d("onStop " + this)
+        LOGGER.d("onStop " + this)
         super.onStop()
     }
 
     @Synchronized public override fun onDestroy() {
-        com.sightsguru.app.sections.recognizer.CameraActivity.Companion.LOGGER.d("onDestroy " + this)
+        LOGGER.d("onDestroy " + this)
         super.onDestroy()
     }
 
@@ -93,7 +98,7 @@ abstract class CameraActivity : android.app.Activity(), android.media.ImageReade
     override fun onRequestPermissionsResult(
             requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
-            com.sightsguru.app.sections.recognizer.CameraActivity.Companion.PERMISSIONS_REQUEST -> {
+            PERMISSIONS_REQUEST -> {
                 if (grantResults.isNotEmpty()
                         && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
                         && grantResults[1] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -107,7 +112,7 @@ abstract class CameraActivity : android.app.Activity(), android.media.ImageReade
 
     private fun hasPermission(): Boolean {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            return checkSelfPermission(com.sightsguru.app.sections.recognizer.CameraActivity.Companion.PERMISSION_CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED && checkSelfPermission(com.sightsguru.app.sections.recognizer.CameraActivity.Companion.PERMISSION_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            return checkSelfPermission(PERMISSION_CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED && checkSelfPermission(PERMISSION_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
         } else {
             return true
         }
@@ -115,24 +120,24 @@ abstract class CameraActivity : android.app.Activity(), android.media.ImageReade
 
     private fun requestPermission() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            if (shouldShowRequestPermissionRationale(com.sightsguru.app.sections.recognizer.CameraActivity.Companion.PERMISSION_CAMERA) || shouldShowRequestPermissionRationale(com.sightsguru.app.sections.recognizer.CameraActivity.Companion.PERMISSION_STORAGE)) {
-                android.widget.Toast.makeText(this@CameraActivity, "Camera AND storage permission are required for this demo", android.widget.Toast.LENGTH_LONG).show()
+            if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA) || shouldShowRequestPermissionRationale(PERMISSION_STORAGE)) {
+                android.widget.Toast.makeText(this@BaseCameraActivity, "Camera AND storage permission are required for this demo", android.widget.Toast.LENGTH_LONG).show()
             }
-            requestPermissions(arrayOf(com.sightsguru.app.sections.recognizer.CameraActivity.Companion.PERMISSION_CAMERA, com.sightsguru.app.sections.recognizer.CameraActivity.Companion.PERMISSION_STORAGE), com.sightsguru.app.sections.recognizer.CameraActivity.Companion.PERMISSIONS_REQUEST)
+            requestPermissions(arrayOf(PERMISSION_CAMERA, PERMISSION_STORAGE), PERMISSIONS_REQUEST)
         }
     }
 
     protected fun setFragment() {
-        val fragment = CameraConnectionFragment.Companion.newInstance(
+        val fragment = CameraConnectionFragment.newInstance(
                 object : CameraConnectionFragment.ConnectionCallback {
                     override fun onPreviewSizeChosen(size: Size?, cameraRotation: Int) {
-                        this@CameraActivity.onPreviewSizeChosen(size, cameraRotation)
+                        this@BaseCameraActivity.onPreviewSizeChosen(size, cameraRotation)
                     }
                 }, this, layoutId, desiredPreviewFrameSize)
 
         fragmentManager
                 .beginTransaction()
-                .replace(com.sightsguru.app.R.id.container, fragment)
+                .replace(R.id.container, fragment)
                 .commit()
     }
 
@@ -142,7 +147,7 @@ abstract class CameraActivity : android.app.Activity(), android.media.ImageReade
         for (i in planes.indices) {
             val buffer = planes[i].buffer
             if (yuvBytes[i] == null) {
-                com.sightsguru.app.sections.recognizer.CameraActivity.Companion.LOGGER.d("Initializing buffer %d at size %d", i, buffer.capacity())
+                LOGGER.d("Initializing buffer %d at size %d", i, buffer.capacity())
                 yuvBytes[i] = ByteArray(buffer.capacity())
             }
             buffer.get(yuvBytes[i])
@@ -150,12 +155,12 @@ abstract class CameraActivity : android.app.Activity(), android.media.ImageReade
     }
 
     fun requestRender() {
-        val overlay = findViewById(com.sightsguru.app.R.id.debug_overlay) as org.tensorflow.demo.OverlayView
+        val overlay = findViewById(R.id.debug_overlay) as org.tensorflow.demo.OverlayView
         overlay.postInvalidate()
     }
 
     fun addCallback(callback: org.tensorflow.demo.OverlayView.DrawCallback) {
-        val overlay = findViewById(com.sightsguru.app.R.id.debug_overlay) as org.tensorflow.demo.OverlayView
+        val overlay = findViewById(R.id.debug_overlay) as org.tensorflow.demo.OverlayView
         overlay.addCallback(callback)
     }
 
@@ -171,7 +176,7 @@ abstract class CameraActivity : android.app.Activity(), android.media.ImageReade
         return super.onKeyDown(keyCode, event)
     }
 
-    protected abstract fun onPreviewSizeChosen(size: android.util.Size?, rotation: Int)
+    protected abstract fun onPreviewSizeChosen(size: Size?, rotation: Int)
     protected abstract val layoutId: Int
     protected abstract val desiredPreviewFrameSize: Int
 

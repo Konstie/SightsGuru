@@ -112,7 +112,7 @@ class CameraConnectionFragment private constructor(
     /**
      * An [AutoFitTextureView] for camera preview.
      */
-    private var textureView: AutoFitTextureView? = null
+    private var textureView: TextureView? = null
 
     /**
      * A [CameraCaptureSession] for camera preview.
@@ -207,7 +207,7 @@ class CameraConnectionFragment private constructor(
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        textureView = view.findViewById(R.id.texture) as AutoFitTextureView
+        textureView = view.findViewById(R.id.texture) as TextureView
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -272,11 +272,11 @@ class CameraConnectionFragment private constructor(
 
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
                 val orientation = resources.configuration.orientation
-                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    textureView!!.setAspectRatio(previewSize!!.width, previewSize!!.height)
-                } else {
-                    textureView!!.setAspectRatio(previewSize!!.height, previewSize!!.width)
-                }
+//                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+//                    textureView!!.setAspectRatio(previewSize!!.width, previewSize!!.height)
+//                } else {
+//                    textureView!!.setAspectRatio(previewSize!!.height, previewSize!!.width)
+//                }
 
                 this@CameraConnectionFragment.cameraId = cameraId
             }

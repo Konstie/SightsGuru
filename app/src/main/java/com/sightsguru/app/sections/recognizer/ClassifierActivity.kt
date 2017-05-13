@@ -16,11 +16,27 @@
 
 package com.sightsguru.app.sections.recognizer
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.media.ImageReader
 import android.os.Bundle
+import android.os.SystemClock
+import android.os.Trace
+import android.support.design.widget.BottomSheetBehavior
+import android.view.View
+import butterknife.BindView
+import butterknife.ButterKnife
+import com.sightsguru.app.R
+import com.sightsguru.app.sections.base.BaseCameraActivity
 import com.sightsguru.app.sections.recognizer.presenters.RecognitionPresenter
+import com.sightsguru.app.sections.recognizer.presenters.RecognitionView
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.runBlocking
 import org.tensorflow.demo.OverlayView.DrawCallback
 
-class ClassifierActivity : CameraActivity(), android.media.ImageReader.OnImageAvailableListener {
+class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableListener, RecognitionView {
 
     private var classifier: org.tensorflow.demo.Classifier? = null
 
@@ -30,15 +46,14 @@ class ClassifierActivity : CameraActivity(), android.media.ImageReader.OnImageAv
     private var previewHeight = 0
     private lateinit var yuvBytes: Array<ByteArray?>
     private var rgbBytes: IntArray? = null
-    private var rgbFrameBitmap: android.graphics.Bitmap? = null
-    private var croppedBitmap: android.graphics.Bitmap? = null
-
-    private var cropCopyBitmap: android.graphics.Bitmap? = null
+    private var rgbFrameBitmap: Bitmap? = null
+    private var croppedBitmap: Bitmap? = null
+    private var cropCopyBitmap: Bitmap? = null
 
     private var computing = false
 
-    private var frameToCropTransform: android.graphics.Matrix? = null
-    private var cropToFrameTransform: android.graphics.Matrix? = null
+    private var frameToCropTransform: Matrix? = null
+    private var cropToFrameTransform: Matrix? = null
 
     private var resultsView: org.tensorflow.demo.ResultsView? = null
 
@@ -48,6 +63,9 @@ class ClassifierActivity : CameraActivity(), android.media.ImageReader.OnImageAv
 
     private var presenter: RecognitionPresenter? = null
 
+    @BindView(R.id.bottom_sheet_recognition_results) lateinit var bottomSheet: View
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
+
     override val layoutId: Int
         get() = com.sightsguru.app.R.layout.camera_connection_fragment
 
@@ -56,7 +74,12 @@ class ClassifierActivity : CameraActivity(), android.media.ImageReader.OnImageAv
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ButterKnife.bind(this)
+
         presenter = RecognitionPresenter()
+
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
     }
 
     override fun onStart() {
@@ -159,28 +182,44 @@ class ClassifierActivity : CameraActivity(), android.media.ImageReader.OnImageAv
             return
         }
 
-        rgbFrameBitmap!!.setPixels(rgbBytes, 0, previewWidth, 0, 0, previewWidth, previewHeight)
-        val canvas = android.graphics.Canvas(croppedBitmap!!)
-        canvas.drawBitmap(rgbFrameBitmap!!, frameToCropTransform!!, null)
-
-        // For examining the actual TF input.
-        if (com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.SAVE_PREVIEW_BITMAP) {
-            org.tensorflow.demo.env.ImageUtils.saveBitmap(croppedBitmap)
-        }
+        prepareImageForTensorFlow()
 
         runInBackground(
                 Runnable {
-                    val startTime = android.os.SystemClock.uptimeMillis()
-                    val results = classifier!!.recognizeImage(croppedBitmap)
-                    lastProcessingTimeMs = android.os.SystemClock.uptimeMillis() - startTime
-
-                    cropCopyBitmap = android.graphics.Bitmap.createBitmap(croppedBitmap)
-                    resultsView!!.setResults(results)
-                    requestRender()
-                    computing = false
+                    processImageWithTensorFlow()
                 })
 
-        android.os.Trace.endSection()
+        Trace.endSection()
+    }
+
+    private fun prepareImageForTensorFlow() {
+        rgbFrameBitmap!!.setPixels(rgbBytes, 0, previewWidth, 0, 0, previewWidth, previewHeight)
+        val canvas = Canvas(croppedBitmap!!)
+        canvas.drawBitmap(rgbFrameBitmap!!, frameToCropTransform!!, null)
+
+        // For examining the actual TF input.
+        if (Companion.SAVE_PREVIEW_BITMAP) {
+            org.tensorflow.demo.env.ImageUtils.saveBitmap(croppedBitmap)
+        }
+    }
+
+    private fun processImageWithTensorFlow() {
+        val startTime = SystemClock.uptimeMillis()
+        val results = async(CommonPool) {
+            LOGGER.d("Starting image recognition!")
+            classifier!!.recognizeImage(croppedBitmap)
+        }
+        lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime
+
+        cropCopyBitmap = android.graphics.Bitmap.createBitmap(croppedBitmap)
+
+        // todo: show results in a bottom sheets
+        runBlocking {
+            LOGGER.d("Retrieved recognition results: " + results.await())
+            resultsView!!.setResults(results.await())
+        }
+        requestRender()
+        computing = false
     }
 
     override fun onSetDebug(debug: Boolean) {
