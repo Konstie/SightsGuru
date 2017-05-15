@@ -23,13 +23,10 @@ import android.util.Size
 import com.sightsguru.app.R
 import com.sightsguru.app.sections.recognizer.CameraConnectionFragment
 
-abstract class BaseCameraActivity : AppCompatActivity(), ImageReader.OnImageAvailableListener {
+abstract class BaseCameraActivity : BaseActivity(), ImageReader.OnImageAvailableListener {
 
     var isDebug = false
         private set
-
-    private var handler: Handler? = null
-    private var handlerThread: android.os.HandlerThread? = null
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         LOGGER.d("onCreate " + this)
@@ -42,88 +39,6 @@ abstract class BaseCameraActivity : AppCompatActivity(), ImageReader.OnImageAvai
             setFragment()
         } else {
             requestPermission()
-        }
-    }
-
-    @Synchronized public override fun onStart() {
-        LOGGER.d("onStart " + this)
-        super.onStart()
-    }
-
-    @Synchronized public override fun onResume() {
-        LOGGER.d("onResume " + this)
-        super.onResume()
-
-        handlerThread = android.os.HandlerThread("inference")
-        handlerThread!!.start()
-        handler = Handler(handlerThread!!.looper)
-    }
-
-    @Synchronized public override fun onPause() {
-        LOGGER.d("onPause " + this)
-
-        if (!isFinishing) {
-            LOGGER.d("Requesting finish")
-            finish()
-        }
-
-        handlerThread!!.quitSafely()
-        try {
-            handlerThread!!.join()
-            handlerThread = null
-            handler = null
-        } catch (e: InterruptedException) {
-            LOGGER.e(e, "Exception!")
-        }
-
-        super.onPause()
-    }
-
-    @Synchronized public override fun onStop() {
-        LOGGER.d("onStop " + this)
-        super.onStop()
-    }
-
-    @Synchronized public override fun onDestroy() {
-        LOGGER.d("onDestroy " + this)
-        super.onDestroy()
-    }
-
-    @Synchronized protected fun runInBackground(r: Runnable) {
-        if (handler != null) {
-            handler!!.post(r)
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-            requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        when (requestCode) {
-            PERMISSIONS_REQUEST -> {
-                if (grantResults.isNotEmpty()
-                        && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
-                        && grantResults[1] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                    setFragment()
-                } else {
-                    requestPermission()
-                }
-            }
-        }
-    }
-
-    private fun hasPermission(): Boolean {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            return checkSelfPermission(PERMISSION_CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED && checkSelfPermission(PERMISSION_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        } else {
-            return true
-        }
-    }
-
-    private fun requestPermission() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA) || shouldShowRequestPermissionRationale(PERMISSION_STORAGE)) {
-                android.widget.Toast.makeText(this@BaseCameraActivity, "Camera AND storage permission are required for this demo", android.widget.Toast.LENGTH_LONG).show()
-            }
-            requestPermissions(arrayOf(PERMISSION_CAMERA, PERMISSION_STORAGE), PERMISSIONS_REQUEST)
         }
     }
 
@@ -182,10 +97,5 @@ abstract class BaseCameraActivity : AppCompatActivity(), ImageReader.OnImageAvai
 
     companion object {
         private val LOGGER = org.tensorflow.demo.env.Logger()
-
-        private val PERMISSIONS_REQUEST = 1
-
-        private val PERMISSION_CAMERA = android.Manifest.permission.CAMERA
-        private val PERMISSION_STORAGE = android.Manifest.permission.WRITE_EXTERNAL_STORAGE
     }
 }

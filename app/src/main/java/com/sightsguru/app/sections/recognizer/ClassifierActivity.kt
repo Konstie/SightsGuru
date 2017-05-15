@@ -24,10 +24,14 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.os.Trace
 import android.support.design.widget.BottomSheetBehavior
+import android.support.design.widget.FloatingActionButton
 import android.view.View
+import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
+import com.bumptech.glide.Glide
 import com.sightsguru.app.R
+import com.sightsguru.app.data.models.Place
 import com.sightsguru.app.sections.base.BaseCameraActivity
 import com.sightsguru.app.sections.recognizer.presenters.RecognitionPresenter
 import com.sightsguru.app.sections.recognizer.presenters.RecognitionView
@@ -37,40 +41,37 @@ import kotlinx.coroutines.experimental.runBlocking
 import org.tensorflow.demo.OverlayView.DrawCallback
 
 class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableListener, RecognitionView {
-
-    private var classifier: org.tensorflow.demo.Classifier? = null
-
     private var sensorOrientation: Int? = null
-
+    private var lastProcessingTimeMs: Long = 0
+    private var computing = false
+    private var imageRecognized = false
     private var previewWidth = 0
     private var previewHeight = 0
-    private lateinit var yuvBytes: Array<ByteArray?>
     private var rgbBytes: IntArray? = null
     private var rgbFrameBitmap: Bitmap? = null
     private var croppedBitmap: Bitmap? = null
     private var cropCopyBitmap: Bitmap? = null
-
-    private var computing = false
-
     private var frameToCropTransform: Matrix? = null
     private var cropToFrameTransform: Matrix? = null
 
-    private var resultsView: org.tensorflow.demo.ResultsView? = null
+    private lateinit var yuvBytes: Array<ByteArray?>
 
     private var borderedText: org.tensorflow.demo.env.BorderedText? = null
-
-    private var lastProcessingTimeMs: Long = 0
-
     private var presenter: RecognitionPresenter? = null
+    private var classifier: org.tensorflow.demo.Classifier? = null
 
     @BindView(R.id.bottom_sheet_recognition_results) lateinit var bottomSheet: View
+    @BindView(R.id.title_text_view) lateinit var titleTextView: TextView
+    @BindView(R.id.address_text_view) lateinit var addressTextView: TextView
+    @BindView(R.id.btn_open_details) lateinit var buttonDetails: FloatingActionButton
+
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
 
     override val layoutId: Int
-        get() = com.sightsguru.app.R.layout.camera_connection_fragment
+        get() = R.layout.camera_connection_fragment
 
     override val desiredPreviewFrameSize: Int
-        get() = com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.INPUT_SIZE
+        get() = INPUT_SIZE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,15 +79,18 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
 
         presenter = RecognitionPresenter()
 
+        bottomSheet.bringToFront()
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
-        bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
 
     override fun onStart() {
         super.onStart()
+        presenter?.attachView(this@ClassifierActivity)
     }
 
     override fun onStop() {
+        presenter?.detachView()
         super.onStop()
     }
 
@@ -98,34 +102,33 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
 
         classifier = org.tensorflow.demo.TensorFlowImageClassifier.create(
                 assets,
-                com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.MODEL_FILE,
-                com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.LABEL_FILE,
-                com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.INPUT_SIZE,
-                com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.IMAGE_MEAN,
-                com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.IMAGE_STD,
-                com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.INPUT_NAME,
-                com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.OUTPUT_NAME)
+                MODEL_FILE,
+                LABEL_FILE,
+                INPUT_SIZE,
+                IMAGE_MEAN,
+                IMAGE_STD,
+                INPUT_NAME,
+                OUTPUT_NAME)
 
-        resultsView = findViewById(com.sightsguru.app.R.id.results) as org.tensorflow.demo.ResultsView
         previewWidth = size!!.width
         previewHeight = size.height
 
         val display = windowManager.defaultDisplay
         val screenOrientation = display.rotation
 
-        com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.LOGGER.i("Sensor orientation: %d, Screen orientation: %d", rotation, screenOrientation)
+        LOGGER.i("Sensor orientation: %d, Screen orientation: %d", rotation, screenOrientation)
 
         sensorOrientation = rotation + screenOrientation
 
-        com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.LOGGER.i("Initializing at size %dx%d", previewWidth, previewHeight)
+        LOGGER.i("Initializing at size %dx%d", previewWidth, previewHeight)
         rgbBytes = IntArray(previewWidth * previewHeight)
-        rgbFrameBitmap = android.graphics.Bitmap.createBitmap(previewWidth, previewHeight, android.graphics.Bitmap.Config.ARGB_8888)
-        croppedBitmap = android.graphics.Bitmap.createBitmap(com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.INPUT_SIZE, com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.INPUT_SIZE, android.graphics.Bitmap.Config.ARGB_8888)
+        rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888)
+        croppedBitmap = Bitmap.createBitmap(ClassifierActivity.Companion.INPUT_SIZE, INPUT_SIZE, Bitmap.Config.ARGB_8888)
 
         frameToCropTransform = org.tensorflow.demo.env.ImageUtils.getTransformationMatrix(
                 previewWidth, previewHeight,
-                com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.INPUT_SIZE, com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.INPUT_SIZE,
-                sensorOrientation!!, com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.MAINTAIN_ASPECT)
+                INPUT_SIZE, INPUT_SIZE,
+                sensorOrientation!!, MAINTAIN_ASPECT)
 
         cropToFrameTransform = android.graphics.Matrix()
         frameToCropTransform!!.invert(cropToFrameTransform)
@@ -136,7 +139,15 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
                 DrawCallback { canvas -> renderDebug(canvas) })
     }
 
-    override fun onImageAvailable(reader: android.media.ImageReader) {
+    override fun onPermissionGranted() {
+        setFragment()
+    }
+
+    override fun onImageAvailable(reader: ImageReader) {
+        if (imageRecognized) {
+            return
+        }
+
         var image: android.media.Image? = null
 
         try {
@@ -152,7 +163,7 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
             }
             computing = true
 
-            android.os.Trace.beginSection("imageAvailable")
+            Trace.beginSection("imageAvailable")
 
             val planes = image.planes
             fillBytes(planes, yuvBytes)
@@ -177,17 +188,14 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
             if (image != null) {
                 image.close()
             }
-            com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.LOGGER.e(e, "Exception!")
+            LOGGER.e(e, "Exception!")
             android.os.Trace.endSection()
             return
         }
 
         prepareImageForTensorFlow()
 
-        runInBackground(
-                Runnable {
-                    processImageWithTensorFlow()
-                })
+        runInBackground(Runnable { processImageWithTensorFlow() })
 
         Trace.endSection()
     }
@@ -203,6 +211,7 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
         }
     }
 
+    @Suppress("EXPERIMENTAL_FEATURE_WARNING")
     private fun processImageWithTensorFlow() {
         val startTime = SystemClock.uptimeMillis()
         val results = async(CommonPool) {
@@ -211,12 +220,10 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
         }
         lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime
 
-        cropCopyBitmap = android.graphics.Bitmap.createBitmap(croppedBitmap)
+        cropCopyBitmap = Bitmap.createBitmap(croppedBitmap)
 
-        // todo: show results in a bottom sheets
         runBlocking {
-            LOGGER.d("Retrieved recognition results: " + results.await())
-            resultsView!!.setResults(results.await())
+            presenter?.onResultsRetrieved(results.await())
         }
         requestRender()
         computing = false
@@ -224,6 +231,19 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
 
     override fun onSetDebug(debug: Boolean) {
         classifier!!.enableStatLogging(debug)
+    }
+
+    override fun onSpotRecognized(place: Place?) {
+        imageRecognized = true
+
+        titleTextView.text = place?.title
+        addressTextView.text = place?.address
+        buttonDetails.setOnClickListener {  }
+        if (place != null) {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+        }
+        Glide.with(this@ClassifierActivity).load(place?.imageUrl
+        )
     }
 
     private fun renderDebug(canvas: android.graphics.Canvas) {
