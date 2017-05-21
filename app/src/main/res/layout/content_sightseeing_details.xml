@@ -4,6 +4,8 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="124dp"
+    android:background="?attr/selectableItemBackground"
+    android:focusableInTouchMode="true"
     android:padding="16dp">
     <ImageView
         android:layout_width="86dp"

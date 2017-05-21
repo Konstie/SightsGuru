@@ -17,8 +17,6 @@
 package com.sightsguru.app.sections.base
 
 import android.media.ImageReader
-import android.os.Handler
-import android.support.v7.app.AppCompatActivity
 import android.util.Size
 import com.sightsguru.app.R
 import com.sightsguru.app.sections.recognizer.CameraConnectionFragment
@@ -35,7 +33,7 @@ abstract class BaseCameraActivity : BaseActivity(), ImageReader.OnImageAvailable
 
         setContentView(R.layout.activity_camera)
 
-        if (hasPermission()) {
+        if (allPermissionsGranted()) {
             setFragment()
         } else {
             requestPermission()

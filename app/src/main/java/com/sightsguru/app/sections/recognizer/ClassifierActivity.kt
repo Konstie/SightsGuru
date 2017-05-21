@@ -25,7 +25,10 @@ import android.os.SystemClock
 import android.os.Trace
 import android.support.design.widget.BottomSheetBehavior
 import android.support.design.widget.FloatingActionButton
+import android.util.TypedValue
 import android.view.View
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
@@ -35,16 +38,20 @@ import com.sightsguru.app.data.models.Place
 import com.sightsguru.app.sections.base.BaseCameraActivity
 import com.sightsguru.app.sections.recognizer.presenters.RecognitionPresenter
 import com.sightsguru.app.sections.recognizer.presenters.RecognitionView
+import com.sightsguru.app.utils.ViewUtils
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.runBlocking
 import org.tensorflow.demo.OverlayView.DrawCallback
+import org.tensorflow.demo.env.ImageUtils
 
 class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableListener, RecognitionView {
+    private val BOTTOM_SHEET_HEIGHT = 124
+
     private var sensorOrientation: Int? = null
     private var lastProcessingTimeMs: Long = 0
     private var computing = false
-    private var imageRecognized = false
+    private @Volatile var imageRecognized = false
     private var previewWidth = 0
     private var previewHeight = 0
     private var rgbBytes: IntArray? = null
@@ -60,10 +67,11 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
     private var presenter: RecognitionPresenter? = null
     private var classifier: org.tensorflow.demo.Classifier? = null
 
-    @BindView(R.id.bottom_sheet_recognition_results) lateinit var bottomSheet: View
+    @BindView(R.id.bottom_sheet_recognition_results) lateinit var bottomSheet: FrameLayout
     @BindView(R.id.title_text_view) lateinit var titleTextView: TextView
     @BindView(R.id.address_text_view) lateinit var addressTextView: TextView
-    @BindView(R.id.btn_open_details) lateinit var buttonDetails: FloatingActionButton
+    @BindView(R.id.preview_image_view) lateinit var previewImageView: ImageView
+    @BindView(R.id.btn_refresh) lateinit var buttonRefresh: FloatingActionButton
 
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
 
@@ -79,14 +87,49 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
 
         presenter = RecognitionPresenter()
 
-        bottomSheet.bringToFront()
+        setupPlaceInfoSheet()
+
+        buttonRefresh.setOnClickListener { onRefreshPressed() }
+    }
+
+    private fun setupPlaceInfoSheet() {
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
-        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        bottomSheetBehavior.setBottomSheetCallback(bottomSheetCallback)
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        bottomSheet.setOnClickListener {
+            // todo: open details
+        }
+    }
+
+    private val bottomSheetCallback = object : BottomSheetBehavior.BottomSheetCallback() {
+        override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+
+        override fun onStateChanged(bottomSheet: View, newState: Int) {
+            when (newState) {
+                BottomSheetBehavior.STATE_COLLAPSED -> {
+                    buttonRefresh.animate().scaleX(0f).scaleY(0f).duration = 250
+                }
+                BottomSheetBehavior.STATE_EXPANDED -> {
+                    buttonRefresh.animate().scaleX(1f).scaleY(1f).duration = 250
+                    bottomSheetBehavior.peekHeight = ViewUtils.dpToPx(resources, BOTTOM_SHEET_HEIGHT)
+                }
+            }
+        }
+    }
+
+    private fun onRefreshPressed() {
+        bottomSheetBehavior.peekHeight = 0
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        imageRecognized = false
+        presenter?.onResetRecognitionResult()
     }
 
     override fun onStart() {
         super.onStart()
         presenter?.attachView(this@ClassifierActivity)
+        if (allPermissionsGranted()) {
+            presenter?.retrieveCurrentLocation(this@ClassifierActivity)
+        }
     }
 
     override fun onStop() {
@@ -95,8 +138,8 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
     }
 
     override fun onPreviewSizeChosen(size: android.util.Size?, rotation: Int) {
-        val textSizePx = android.util.TypedValue.applyDimension(
-                android.util.TypedValue.COMPLEX_UNIT_DIP, com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.TEXT_SIZE_DIP, resources.displayMetrics)
+        val textSizePx = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, com.sightsguru.app.sections.recognizer.ClassifierActivity.Companion.TEXT_SIZE_DIP, resources.displayMetrics)
         borderedText = org.tensorflow.demo.env.BorderedText(textSizePx)
         borderedText!!.setTypeface(android.graphics.Typeface.MONOSPACE)
 
@@ -144,10 +187,6 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
     }
 
     override fun onImageAvailable(reader: ImageReader) {
-        if (imageRecognized) {
-            return
-        }
-
         var image: android.media.Image? = null
 
         try {
@@ -157,7 +196,7 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
                 return
             }
 
-            if (computing) {
+            if (computing || imageRecognized) {
                 image.close()
                 return
             }
@@ -207,7 +246,7 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
 
         // For examining the actual TF input.
         if (Companion.SAVE_PREVIEW_BITMAP) {
-            org.tensorflow.demo.env.ImageUtils.saveBitmap(croppedBitmap)
+            ImageUtils.saveBitmap(croppedBitmap)
         }
     }
 
@@ -234,16 +273,19 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
     }
 
     override fun onSpotRecognized(place: Place?) {
-        imageRecognized = true
+        runOnUiThread {
+            imageRecognized = true
 
-        titleTextView.text = place?.title
-        addressTextView.text = place?.address
-        buttonDetails.setOnClickListener {  }
-        if (place != null) {
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            titleTextView.text = place?.title
+            addressTextView.text = place?.address
+            if (place != null) {
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            }
+            LOGGER.d("Image URL: ${place?.imageUrl}")
+            Glide.with(this@ClassifierActivity)
+                    .load(place?.imageUrl)
+                    .into(previewImageView)
         }
-        Glide.with(this@ClassifierActivity).load(place?.imageUrl
-        )
     }
 
     private fun renderDebug(canvas: android.graphics.Canvas) {
@@ -277,25 +319,14 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
         }
     }
 
+    override fun onDestroy() {
+        bottomSheetBehavior.setBottomSheetCallback(null)
+        super.onDestroy()
+    }
+
     companion object {
         private val LOGGER = org.tensorflow.demo.env.Logger()
 
-        // These are the settings for the original v1 Inception model. If you want to
-        // use a model that's been produced from the TensorFlow for Poets codelab,
-        // you'll need to set IMAGE_SIZE = 299, IMAGE_MEAN = 128, IMAGE_STD = 128,
-        // INPUT_NAME = "Mul:0", and OUTPUT_NAME = "final_result:0".
-        // You'll also need to update the MODEL_FILE and LABEL_FILE paths to point to
-        // the ones you produced.
-        //
-        // To use v3 Inception model, strip the DecodeJpeg Op from your retrained
-        // model first:
-        //
-        // python strip_unused.py \
-        // --input_graph=<retrained-pb-file> \
-        // --output_graph=<your-stripped-pb-file> \
-        // --input_node_names="Mul" \
-        // --output_node_names="final_result" \
-        // --input_binary=true
         private val INPUT_SIZE = 299
         private val IMAGE_MEAN = 128
         private val IMAGE_STD = 128f

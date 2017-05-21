@@ -21,16 +21,20 @@
         android:id="@+id/bottom_sheet_recognition_results"
         android:clipToPadding="true"
         android:background="@android:color/white"
-        app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
+        app:layout_behavior="android.support.design.widget.BottomSheetBehavior"
+        app:behavior_hideable="false"
+        app:behavior_peekHeight="0dp">
         <include layout="@layout/content_sightseeing_details" />
     </android.support.v4.widget.NestedScrollView>
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/btn_open_details"
+        android:id="@+id/btn_refresh"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="?attr/selectableItemBackground"
-        android:src="@drawable/ic_action_info"
+        android:src="@drawable/ic_action_refresh"
+        android:scaleX="0"
+        android:scaleY="0"
         app:layout_anchor="@+id/bottom_sheet_recognition_results"
         app:layout_anchorGravity="top|end"
         app:backgroundTint="@color/color_accent"

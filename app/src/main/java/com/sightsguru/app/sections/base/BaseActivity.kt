@@ -1,5 +1,6 @@
 package com.sightsguru.app.sections.base
 
+import android.os.Build
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
 
@@ -74,9 +75,11 @@ open abstract class BaseActivity : AppCompatActivity() {
 
     protected abstract fun onPermissionGranted()
 
-    protected fun hasPermission(): Boolean {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            return checkSelfPermission(PERMISSION_CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED && checkSelfPermission(PERMISSION_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    protected fun allPermissionsGranted(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return checkSelfPermission(PERMISSION_CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    && checkSelfPermission(PERMISSION_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    && checkSelfPermission(PERMISSION_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
         } else {
             return true
         }
@@ -84,10 +87,10 @@ open abstract class BaseActivity : AppCompatActivity() {
 
     protected fun requestPermission() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA) || shouldShowRequestPermissionRationale(PERMISSION_STORAGE)) {
+            if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA) || shouldShowRequestPermissionRationale(PERMISSION_STORAGE) || shouldShowRequestPermissionRationale(PERMISSION_LOCATION)) {
                 android.widget.Toast.makeText(this@BaseActivity, "Camera AND storage permission are required for this demo", android.widget.Toast.LENGTH_LONG).show()
             }
-            requestPermissions(arrayOf(PERMISSION_CAMERA, PERMISSION_STORAGE), PERMISSIONS_REQUEST)
+            requestPermissions(arrayOf(PERMISSION_CAMERA, PERMISSION_STORAGE, PERMISSION_LOCATION), PERMISSIONS_REQUEST)
         }
     }
 
@@ -98,5 +101,6 @@ open abstract class BaseActivity : AppCompatActivity() {
 
         private val PERMISSION_CAMERA = android.Manifest.permission.CAMERA
         private val PERMISSION_STORAGE = android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+        private val PERMISSION_LOCATION = android.Manifest.permission.ACCESS_FINE_LOCATION
     }
 }
