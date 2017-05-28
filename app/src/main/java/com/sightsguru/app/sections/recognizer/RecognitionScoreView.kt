@@ -15,7 +15,7 @@ limitations under the License.
 
 package com.sightsguru.app.sections.recognizer
 
-class RecognitionScoreView(context: android.content.Context, set: android.util.AttributeSet) : android.view.View(context, set), org.tensorflow.demo.ResultsView {
+class RecognitionScoreView(context: android.content.Context, set: android.util.AttributeSet) : android.view.View(context, set) {
     private var results: List<org.tensorflow.demo.Classifier.Recognition>? = null
     private val textSizePx: Float
     private val fgPaint: android.graphics.Paint
@@ -29,11 +29,6 @@ class RecognitionScoreView(context: android.content.Context, set: android.util.A
 
         bgPaint = android.graphics.Paint()
         bgPaint.color = 0xcc4285f4.toInt()
-    }
-
-    override fun setResults(results: List<org.tensorflow.demo.Classifier.Recognition>) {
-        this.results = results
-        postInvalidate()
     }
 
     public override fun onDraw(canvas: android.graphics.Canvas) {

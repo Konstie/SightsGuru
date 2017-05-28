@@ -4,53 +4,9 @@ import android.os.Build
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
 
-open abstract class BaseActivity : AppCompatActivity() {
-    private var handler: Handler? = null
-    private var handlerThread: android.os.HandlerThread? = null
-
-    @Synchronized public override fun onStart() {
-        LOGGER.d("onStart " + this)
-        super.onStart()
-    }
-
-    @Synchronized public override fun onResume() {
-        LOGGER.d("onResume " + this)
-        super.onResume()
-
-        handlerThread = android.os.HandlerThread("inference")
-        handlerThread!!.start()
-        handler = Handler(handlerThread!!.looper)
-    }
-
-    @Synchronized public override fun onPause() {
-        LOGGER.d("onPause " + this)
-
-        if (!isFinishing) {
-            LOGGER.d("Requesting finish")
-            finish()
-        }
-
-        handlerThread!!.quitSafely()
-        try {
-            handlerThread!!.join()
-            handlerThread = null
-            handler = null
-        } catch (e: InterruptedException) {
-            LOGGER.e(e, "Exception!")
-        }
-
-        super.onPause()
-    }
-
-    @Synchronized public override fun onStop() {
-        LOGGER.d("onStop " + this)
-        super.onStop()
-    }
-
-    @Synchronized public override fun onDestroy() {
-        LOGGER.d("onDestroy " + this)
-        super.onDestroy()
-    }
+abstract class BaseActivity : AppCompatActivity() {
+    protected var handler: Handler? = null
+    protected var handlerThread: android.os.HandlerThread? = null
 
     @Synchronized protected fun runInBackground(r: Runnable) {
         if (handler != null) {
@@ -95,8 +51,6 @@ open abstract class BaseActivity : AppCompatActivity() {
     }
 
     companion object {
-        private val LOGGER = org.tensorflow.demo.env.Logger()
-
         private val PERMISSIONS_REQUEST = 1
 
         private val PERMISSION_CAMERA = android.Manifest.permission.CAMERA

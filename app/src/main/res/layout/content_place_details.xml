@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="4dp">
+        <android.support.v7.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/place_data_card_view"
+            android:visibility="gone"
+            app:cardBackgroundColor="@color/color_card_background"
+            app:cardCornerRadius="0dp"
+            app:contentPadding="8dp"
+            android:elevation="4dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:id="@+id/address_text_view" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:id="@+id/year_text_view" />
+            </LinearLayout>
+        </android.support.v7.widget.CardView>
+        <android.support.v7.widget.CardView
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/place_description_card_view"
+            android:visibility="gone"
+            app:cardBackgroundColor="@color/color_card_background"
+            app:cardCornerRadius="0dp"
+            app:contentPadding="8dp"
+            android:elevation="4dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textColor="@android:color/black"
+                android:id="@+id/description_text_view" />
+        </android.support.v7.widget.CardView>
+        <android.support.v7.widget.CardView
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/place_map_card_view"
+            android:visibility="gone"
+            app:cardCornerRadius="0dp"
+            app:contentPadding="0dp"
+            android:elevation="4dp">
+            <com.google.android.gms.maps.MapView
+                android:layout_width="match_parent"
+                android:layout_height="142dp"
+                android:id="@+id/map_view"
+                app:liteMode="true"
+                app:mapType="normal">
+            </com.google.android.gms.maps.MapView>
+        </android.support.v7.widget.CardView>
+    </LinearLayout>
+</ScrollView>

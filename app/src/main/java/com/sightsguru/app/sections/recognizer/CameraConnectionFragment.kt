@@ -429,7 +429,7 @@ class CameraConnectionFragment private constructor(
 
                                 // Finally, we start displaying the camera preview.
                                 previewRequest = previewRequestBuilder!!.build()
-                                captureSession!!.setRepeatingRequest(
+                                captureSession?.setRepeatingRequest(
                                         previewRequest!!, captureCallback, backgroundHandler)
                             } catch (e: CameraAccessException) {
                                 LOGGER.e(e, "Exception!")

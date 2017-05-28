@@ -29,21 +29,6 @@ public class ImageUtils {
   private static final Logger LOGGER = new Logger();
 
   /**
-   * Utility method to compute the allocated size in bytes of a YUV420SP image
-   * of the given dimensions.
-   */
-  public static int getYUVByteSize(final int width, final int height) {
-    // The luminance plane requires 1 byte per pixel.
-    final int ySize = width * height;
-
-    // The UV plane works on 2x2 blocks, so dimensions with odd size must be rounded up.
-    // Each 2x2 block takes 2 bytes to encode, one each for U and V.
-    final int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
-
-    return ySize + uvSize;
-  }
-
-  /**
    * Saves a Bitmap object to disk for analysis.
    *
    * @param bitmap The bitmap to save.

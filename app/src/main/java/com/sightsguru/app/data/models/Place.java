@@ -13,6 +13,7 @@ public class Place {
     @PropertyName("wiki_url") public String wikiUrl;
     @PropertyName("image_url") public String imageUrl;
     public int year;
+    public String tag;
 
     @Override
     public String toString() {

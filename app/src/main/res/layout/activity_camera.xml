@@ -23,8 +23,9 @@
         android:background="@android:color/white"
         app:layout_behavior="android.support.design.widget.BottomSheetBehavior"
         app:behavior_hideable="false"
-        app:behavior_peekHeight="0dp">
-        <include layout="@layout/content_sightseeing_details" />
+        app:behavior_peekHeight="0dp"
+        android:elevation="4dp">
+        <include layout="@layout/content_place_details_short" />
     </android.support.v4.widget.NestedScrollView>
 
     <android.support.design.widget.FloatingActionButton
@@ -39,4 +40,29 @@
         app:layout_anchorGravity="top|end"
         app:backgroundTint="@color/color_accent"
         android:layout_margin="16dp"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent">
+        <com.wang.avi.AVLoadingIndicatorView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/progress_bar"
+            android:layout_centerInParent="true"
+            android:visibility="gone"
+            app:indicatorName="LineScaleIndicator"
+            app:indicatorColor="@android:color/white"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@android:color/white"
+            android:visibility="gone"
+            android:id="@+id/progress_text_view"
+            android:layout_below="@id/progress_bar"
+            android:layout_marginTop="4dp"
+            android:layout_centerHorizontal="true"
+            android:text="@string/camera_recognition_progress"/>
+    </RelativeLayout>
 </android.support.design.widget.CoordinatorLayout>
