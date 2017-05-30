@@ -17,7 +17,7 @@
     <string name="description_info">Info</string>
     <string name="request_permission">This sample needs camera permission.</string>
     <string name="camera_error">This device doesn\'t support Camera2 API.</string>
-    <string name="camera_recognition_progress">Recognition in progress: %1$d \%</string>
+    <string name="camera_recognition_progress">Recognition in progress: %1$d</string>
     <string name="ic_action_more">More</string>
     <string name="title_item_list">Items</string>
     <string name="title_item_detail">Item Detail</string>
@@ -26,4 +26,6 @@
     <string name="details_year">Year: %d</string>
     <string name="details_address">Address: %s</string>
     <string name="details_error">Could not retrieve info for this spot :c</string>
+    <string name="home_start">Start!</string>
+    <string name="home_intro">Recognize spots in Kiev and explore their history</string>
 </resources>

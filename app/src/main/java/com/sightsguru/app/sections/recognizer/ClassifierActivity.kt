@@ -124,13 +124,17 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
         imageRecognized = false
         presenter?.onResetRecognitionResult()
+        progressIndicator.visibility = View.VISIBLE
+        progressTextView.visibility = View.VISIBLE
+        progressTextView.alpha = 1f
+        progressTextView.text = "${getString(R.string.camera_recognition_progress, 0)}%"
     }
 
     override fun onOpenSpotDetails(spotTag: String?) {
         if (spotTag != null) {
             val intent = IntentHelper.getDetailsActivityIntent(this@ClassifierActivity, spotTag)
             val activityOptions = ActivityOptionsCompat.makeSceneTransitionAnimation(this, previewImageView as View, "poster")
-            startActivity(intent, activityOptions.toBundle());
+            startActivity(intent, activityOptions.toBundle())
         }
     }
 
@@ -294,7 +298,7 @@ class ClassifierActivity : BaseCameraActivity(), ImageReader.OnImageAvailableLis
 
     private fun updateProgressValue(progressValue: Int) {
         runOnUiThread {
-            progressTextView.text = getString(R.string.camera_recognition_progress, progressValue)
+            progressTextView.text = "${getString(R.string.camera_recognition_progress, progressValue)}%"
         }
     }
 

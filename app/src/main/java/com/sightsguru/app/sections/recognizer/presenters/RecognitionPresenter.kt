@@ -133,6 +133,7 @@ class RecognitionPresenter {
 
     fun onResetRecognitionResult() {
         recognitionEntropyList.clear()
+        progressValue = 0
     }
 
     fun attachView(view: RecognitionView) {

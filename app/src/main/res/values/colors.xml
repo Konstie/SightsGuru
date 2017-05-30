@@ -3,6 +3,9 @@
     <color name="control_background">#cc4285f4</color>
     <color name="color_primary">#ff9d25</color>
     <color name="color_primary_dark">#d67600</color>
+    <color name="color_primary_darker">#c46c00</color>
     <color name="color_accent">#ffb917</color>
+    <color name="color_home_background">#ffc799</color>
+    <color name="color_skyline_background">#ffb374</color>
     <color name="color_card_background">#efefef</color>
 </resources>

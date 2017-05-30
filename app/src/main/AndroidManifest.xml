@@ -34,20 +34,28 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAPFxPf0vIVo0OEINdiHHvaYJfr5KheOYc"/>
         <activity
-            android:name=".sections.recognizer.ClassifierActivity"
-            android:label="@string/activity_name_sightseeing_detector"
-            android:screenOrientation="portrait">
+            android:name=".sections.home.HomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".sections.home.HomeActivity" />
-        <activity android:name=".sections.details.DetailsActivity">
+        <activity
+            android:name=".sections.recognizer.ClassifierActivity"
+            android:parentActivityName=".sections.home.HomeActivity"
+            android:label="@string/activity_name_sightseeing_detector"
+            android:screenOrientation="portrait">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".sections.recognizer.ClassifierActivity" />
+                android:value=".sections.home.HomeActivity" />
+        </activity>
+        <activity
+            android:name=".sections.details.DetailsActivity"
+            android:parentActivityName=".sections.home.HomeActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".sections.home.HomeActivity" />
         </activity>
     </application>
 
